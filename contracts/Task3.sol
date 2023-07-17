@@ -46,7 +46,7 @@ contract OddEvenGame is VRFConsumerBaseV2 {
     * @dev Starts the betting process
     * @param subscriptionId Subscription id that this consumer contract can use
     */
-    constructor(uint64 subscriptionId)VRFConsumerBaseV2(0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed)
+    constructor(uint64 subscriptionId) VRFConsumerBaseV2(0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed)
     {
         COORDINATOR = VRFCoordinatorV2Interface(
             0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed

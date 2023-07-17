@@ -1,8 +1,7 @@
 //SPDX-License-Identifier : MIT
 pragma solidity 0.8.19;
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/ERC721.sol";
-
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 /**
  * @title Task 2 - NFT Minting Smart Contract with Chain Flexibility
