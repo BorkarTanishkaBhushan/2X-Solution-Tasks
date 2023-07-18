@@ -1,26 +1,43 @@
 //SPDX-LICENSE-IDENTIFIER: UNLICENSED
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.0;
+
 
 /// @title Task 1 - Custom Token Creation with Buy/Sell Tax and Fee Conversion 
-/// @notice Use this contract for only the most basic simulation
 contract CustomToken {
 
+    /**
+    * @dev A mapping to store balances of each address
+    * Key: Address of the user
+    * Value: Token balance of the user
+    */
     mapping(address => uint256) public balances;
+    /**
+    * @dev Stores the approved allowances for token transfers between addresses
+    * Key: Address of the user
+    * Value: Number of allowed tokens
+    */
     mapping(address => mapping(address => uint256)) public allowances;
+    /// Total supply of the token
     uint256 public totalSupply;
+    /// Number of decimal places for token representation
     uint8 public decimals;
+    /// Name of the token
     string public name;
+    /// Symbol or ticker of the token
     string public symbol;
+    /// Price of the token in Ether (ETH)
     uint256 public tokenPrice = 1 ether;
-
-    uint256 public buyTaxPercentage;
-    uint256 public sellTaxPercentage;
+    /// Tax applied on token purchases
+    uint256 public buyTax;
+    /// Tax percentage applied on token sales
+    uint256 public sellTax;
+    /// Percentage of collected fees to be converted
     uint256 public feeConversionPercentage;
-    address public feeConversionWallet;
-
+    /// Address of the token contract owner
     address public owner;
-
+    /// Event emitted when tokens are transferred between addresses
     event Transfer(address indexed from, address indexed to, uint256 value);
+    /// Event emitted when token transfer approval is granted
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
 
@@ -30,29 +47,26 @@ contract CustomToken {
     * @param _name Name of the token
     * @param _symbol Short name of the token
     * @param _decimals Decimal places used
-    * @param _buyTaxPercentage Tax applied while buying the token
-    * @param _sellTaxPercentage Tax applied while selling the token
+    * @param _buyTax Tax applied while buying the token
+    * @param _sellTax Tax applied while selling the token
     * @param _feeConversionPercentage Tax converted into fees
-    * @param _feeConversionWallet Wallet to which all fees are transferred
     */
     constructor(
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
         uint256 _totalSupply,
-        uint256 _buyTaxPercentage,
-        uint256 _sellTaxPercentage,
-        uint256 _feeConversionPercentage,
-        address _feeConversionWallet
+        uint256 _buyTax,
+        uint256 _sellTax,
+        uint256 _feeConversionPercentage
     ){
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
-        totalSupply = _totalSupply * 10**18;
-        buyTaxPercentage = _buyTaxPercentage;
-        sellTaxPercentage = _sellTaxPercentage;
+        totalSupply = _totalSupply * 10**uint256(decimals);
+        buyTax = _buyTax;
+        sellTax = _sellTax;
         feeConversionPercentage = _feeConversionPercentage;
-        feeConversionWallet = _feeConversionWallet;
         owner = msg.sender;
         balances[msg.sender] = totalSupply;
         emit Transfer(address(0), msg.sender, _totalSupply);
@@ -66,7 +80,7 @@ contract CustomToken {
     * @return balance The token balance of the specified address.
     */
     function balanceOf(address tokenOwner) public view returns (uint balance)
-    {
+    { 
         return balances[tokenOwner];
     }
 
@@ -79,8 +93,8 @@ contract CustomToken {
     function buyToken() public payable{
         require(msg.value > 0, "1 CT = 1 ETH");
         require(address(msg.sender).balance >= msg.value, "You don't have enough balance");
-        uint256 totalBuyTax = msg.value + (msg.value * buyTaxPercentage); //@audit -- ask krishi
-        uint256 totalTokensToTransfer =  msg.value / totalBuyTax; //@audit--ask
+        uint256 totalBuyTax = (msg.value * buyTax) / 100; 
+        uint256 totalTokensToTransfer =  msg.value / (msg.value - totalBuyTax); 
 
         uint256 tokenBalance = balanceOf(address(this));
         require(tokenBalance >= totalTokensToTransfer, "Not enough tokens available");
@@ -107,7 +121,7 @@ contract CustomToken {
         uint256 totalethAmt = tokenAmt * tokenPrice;
         require(address(this).balance >= totalethAmt, "Contract does not have enough ETH balance");
 
-        uint256 sellTaxAmount = (totalethAmt * sellTaxPercentage);
+        uint256 sellTaxAmount = (totalethAmt * sellTax) / 100;
         uint256 transferEthAmt = tokenPrice * tokenAmt - sellTaxAmount;
 
         _transfer(msg.sender, address(this), tokenAmt);
@@ -177,9 +191,9 @@ contract CustomToken {
     * @dev Sets the buy tax percentage for the custom token.
     * @param percentage The new buy tax percentage to be set.
     */
-    function setBuyTaxPercentage(uint256 percentage) public {
+    function setBuyTax(uint256 percentage) public {
         require(msg.sender == owner, "Only owner can set buy tax percentage");
-        buyTaxPercentage = percentage;
+        buyTax = percentage;
     }
 
 
@@ -188,12 +202,12 @@ contract CustomToken {
     * @dev Sets the sell tax percentage for the custom token.
     * @param percentage The new sell tax percentage to be set.
     */
-    function setSellTaxPercentage(uint256 percentage) public {
+    function setSellTax(uint256 percentage) public {
         require(
             msg.sender == owner,
             "Only owner can set sell tax percentage"
         );
-        sellTaxPercentage = percentage;
+        sellTax = percentage;
     }
 
 
@@ -208,16 +222,6 @@ contract CustomToken {
             "Only owner can set fee conversion percentage"
         );
         feeConversionPercentage = percentage;
-    }
-
-    /**
-    * @notice Only the contract owner can set the fee conversion wallet.
-    * @dev Sets the fee conversion wallet address.
-    * @param wallet The new fee conversion wallet address to be set.
-    */
-    function setFeeConversionWallet(address wallet) public {
-        require(msg.sender == owner, "Only owner can set fee conversion wallet");
-        feeConversionWallet = wallet;
     }
 
 
@@ -256,27 +260,7 @@ contract CustomToken {
     ) internal {
         require(ownerSender != address(0), "Approve from the zero address");
         require(spender != address(0), "Approve to the zero address");
-
         allowances[ownerSender][spender] = amount;
         emit Approval(ownerSender, spender, amount);
     }
-
 }
-
-
-
-//owner 
-
-//a1
-//a2
-//a3
-
-//buy from contract
-//a1 4eth fee
-//a2 2eth
-//a3 1eth
-
-//sell to contract
-//a1 1one part only
-//a2 half tokens
-//a3 all tokens
