@@ -10,34 +10,26 @@ import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
  */ 
 contract OddEvenGame is VRFConsumerBaseV2 {
 
-    VRFCoordinatorV2Interface COORDINATOR;
-    uint64 s_subscriptionId;
     bytes32 keyHash = 0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f;
-
-    uint32 callbackGasLimit = 100000;
-
-    uint16 requestConfirmations = 3;
-
-    uint32 numWords = 2;
-
-    uint256[] public s_randomWords;
-    uint256 public s_requestId;
-    address s_owner;
-
     uint participationFee = 0.01 ether;
-    address[] bettors;
     uint totalOddBetAmt;
     uint totalEvenBetAmt;
-
+    uint64 s_subscriptionId;
+    address s_owner;
+    uint32 numWords = 2;
+    uint32 callbackGasLimit = 100000;
+    uint16 requestConfirmations = 3;
     bool betOpen;
-
-    event BettorRegistered(address bettor);
-
-    enum BetChoice{ ODD, EVEN }
-
+    uint256 public s_requestId;
+    uint256[] public s_randomWords;
+    address[] bettors;
     mapping(address => uint) bet;
     address[] odd;
     address[] even;
+    VRFCoordinatorV2Interface COORDINATOR;
+    event BettorRegistered(address bettor);
+    enum BetChoice{ ODD, EVEN }
+
 
 
     /**
