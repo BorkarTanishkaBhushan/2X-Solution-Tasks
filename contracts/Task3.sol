@@ -3,12 +3,15 @@ pragma solidity ^0.8.7;
 
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
+import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
+
 
 /**
  * @title Task3 - OddEvenGame
  * @dev A contract for playing the Odd-Even game using Chainlink's VRF (Verifiable Random Function).
  */ 
-contract OddEvenGame is VRFConsumerBaseV2 {
+contract OddEvenGame is VRFConsumerBaseV2, ConfirmedOwner {
+
 
     bytes32 keyHash = 0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f;
     uint participationFee = 0.01 ether;
@@ -38,7 +41,7 @@ contract OddEvenGame is VRFConsumerBaseV2 {
     * @dev Starts the betting process
     * @param subscriptionId Subscription id that this consumer contract can use
     */
-    constructor(uint64 subscriptionId) VRFConsumerBaseV2(0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed)
+    constructor(uint64 subscriptionId)VRFConsumerBaseV2(0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625) ConfirmedOwner(msg.sender)
     {
         COORDINATOR = VRFCoordinatorV2Interface(
             0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed
@@ -142,41 +145,66 @@ contract OddEvenGame is VRFConsumerBaseV2 {
     * @dev Distributes the rewards to the winners
     * @param randomNumber Store the enum equivalent of the randomNumber generated
     */
-    function afterResult(BetChoice randomNumber) public{
-        require(!betOpen, "Reselts are not yet declared");
+    function afterResult(BetChoice randomNumber) public {
+        require(!betOpen, "Results are not yet declared");
         uint totalBettors = bettors.length;
         uint totalBetAmt = totalOddBetAmt + totalEvenBetAmt;
-        // uint totalFeeCollected = participationFee * totalBettors;
         uint winners;
 
-        for(uint i = 0; i < totalBettors; ++i){
+        for (uint i = 0; i < totalBettors; ++i) {
             (bool sent, ) = bettors[i].call{value: participationFee}("");
             require(sent, "Failed to transfer participation fee");
         }
 
-        if(randomNumber == BetChoice.ODD){
+        if (randomNumber == BetChoice.ODD) {
             winners = odd.length;
-            uint priceToEachWinner = totalBetAmt / winners;
-            for(uint i = 0; i < winners; ++i){
-                (bool sent, ) = odd[i].call{value: priceToEachWinner}("");
-                require(sent, "Failed to transfer winner price");
+            uint totalWinningAmount = 0;
+            uint[] memory winnerAmounts = new uint[](winners);
+
+            for (uint i = 0; i < winners; ++i) {
+                uint winnerPercentage = (bet[odd[i]] * 100) / totalOddBetAmt;
+                uint winnerAmount = (totalBetAmt * winnerPercentage) / 100;
+                winnerAmounts[i] = winnerAmount;
+                totalWinningAmount += winnerAmount;
             }
-        }
-        else{
+
+            // Distribute the prize to winners
+            for (uint i = 0; i < winners; ++i) {
+                (bool sent, ) = odd[i].call{value: winnerAmounts[i]}("");
+                require(sent, "Failed to transfer winner prize");
+            }
+
+            // Distribute any remaining amount (due to rounding errors) to the first winner
+            uint remainingAmount = totalBetAmt - totalWinningAmount;
+            (bool sent, ) = odd[0].call{value: remainingAmount}("");
+            require(sent, "Failed to transfer remaining amount");
+        } 
+        else {
             winners = even.length;
-            uint priceToEachWinner = totalBetAmt / winners;
-            for(uint i = 0; i < winners; ++i){
-                (bool sent, ) = even[i].call{value: priceToEachWinner}("");
-                require(sent, "Failed to transfer winner price");
+            uint totalWinningAmount = 0;
+            uint[] memory winnerAmounts = new uint[](winners);
+
+            for (uint i = 0; i < winners; ++i) {
+                uint winnerPercentage = (bet[even[i]] * 100) / totalEvenBetAmt;
+                uint winnerAmount = (totalBetAmt * winnerPercentage) / 100;
+                winnerAmounts[i] = winnerAmount;
+                totalWinningAmount += winnerAmount;
             }
+
+            // Distribute the prize to winners
+            for (uint i = 0; i < winners; ++i) {
+                (bool sent, ) = even[i].call{value: winnerAmounts[i]}("");
+                require(sent, "Failed to transfer winner prize");
+            }
+
+            // Distribute any remaining amount (due to rounding errors) to the first winner
+            uint remainingAmount = totalBetAmt - totalWinningAmount;
+            (bool sent, ) = even[0].call{value: remainingAmount}("");
+            require(sent, "Failed to transfer remaining amount");
         }
     }
 
 
-    modifier onlyOwner()  {
-        require(msg.sender == s_owner);
-        _;
-    }
 }
 
 
