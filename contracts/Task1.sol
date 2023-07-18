@@ -5,6 +5,22 @@ pragma solidity ^0.8.0;
 /// @title Task 1 - Custom Token Creation with Buy/Sell Tax and Fee Conversion 
 contract CustomToken {
 
+    /// Address of the token contract owner
+    address public owner;
+    /// Total supply of the token
+    uint256 public totalSupply;
+    /// Number of decimal places for token representation
+    uint8 public decimals;
+    /// Price of the token in Ether (ETH)
+    uint256 public tokenPrice = 0.01 ether;
+     /// Tax applied on token purchases
+    uint256 public buyTax;
+    /// Tax percentage applied on token sales
+    uint256 public sellTax;
+    /// Name of the token
+    string public name;
+    /// Symbol or ticker of the token
+    string public symbol;
     /**
     * @dev A mapping to store balances of each address
     * Key: Address of the user
@@ -17,24 +33,6 @@ contract CustomToken {
     * Value: Number of allowed tokens
     */
     mapping(address => mapping(address => uint256)) public allowances;
-    /// Total supply of the token
-    uint256 public totalSupply;
-    /// Number of decimal places for token representation
-    uint8 public decimals;
-    /// Name of the token
-    string public name;
-    /// Symbol or ticker of the token
-    string public symbol;
-    /// Price of the token in Ether (ETH)
-    uint256 public tokenPrice = 1 ether;
-    /// Tax applied on token purchases
-    uint256 public buyTax;
-    /// Tax percentage applied on token sales
-    uint256 public sellTax;
-    /// Percentage of collected fees to be converted
-    uint256 public feeConversionPercentage;
-    /// Address of the token contract owner
-    address public owner;
     /// Event emitted when tokens are transferred between addresses
     event Transfer(address indexed from, address indexed to, uint256 value);
     /// Event emitted when token transfer approval is granted
@@ -49,7 +47,6 @@ contract CustomToken {
     * @param _decimals Decimal places used
     * @param _buyTax Tax applied while buying the token
     * @param _sellTax Tax applied while selling the token
-    * @param _feeConversionPercentage Tax converted into fees
     */
     constructor(
         string memory _name,
@@ -57,8 +54,7 @@ contract CustomToken {
         uint8 _decimals,
         uint256 _totalSupply,
         uint256 _buyTax,
-        uint256 _sellTax,
-        uint256 _feeConversionPercentage
+        uint256 _sellTax
     ){
         name = _name;
         symbol = _symbol;
@@ -66,7 +62,6 @@ contract CustomToken {
         totalSupply = _totalSupply * 10**uint256(decimals);
         buyTax = _buyTax;
         sellTax = _sellTax;
-        feeConversionPercentage = _feeConversionPercentage;
         owner = msg.sender;
         balances[msg.sender] = totalSupply;
         emit Transfer(address(0), msg.sender, _totalSupply);
@@ -147,8 +142,8 @@ contract CustomToken {
         _transfer(msg.sender, recipient, amount);
         return true;
     }
-
     
+        
     /**
     * @dev Approves the spender to spend a specified amount of tokens on behalf of the sender.
     * @param spender The address to which the spender approval is granted.
@@ -208,20 +203,6 @@ contract CustomToken {
             "Only owner can set sell tax percentage"
         );
         sellTax = percentage;
-    }
-
-
-    /**
-    * @notice Only the contract owner can set the fee conversion percentage.
-    * @dev Sets the fee conversion percentage for converting fees to ETH.
-    * @param percentage The new fee conversion percentage to be set.
-    */
-    function setFeeConversionPercentage(uint256 percentage) public {
-        require(
-            msg.sender == owner,
-            "Only owner can set fee conversion percentage"
-        );
-        feeConversionPercentage = percentage;
     }
 
 
