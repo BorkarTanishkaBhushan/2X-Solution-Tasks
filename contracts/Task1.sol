@@ -142,8 +142,8 @@ contract CustomToken {
         _transfer(msg.sender, recipient, amount);
         return true;
     }
-    
-        
+
+
     /**
     * @dev Approves the spender to spend a specified amount of tokens on behalf of the sender.
     * @param spender The address to which the spender approval is granted.
