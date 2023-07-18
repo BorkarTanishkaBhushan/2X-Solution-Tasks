@@ -8,11 +8,23 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
  * @dev A contract for minting ERC721 tokens with whitelisted addresses
  */
 contract NftMinting is ERC721 {
+
+    /**
+    * @dev Mapping to store the whitelisted addresses.
+    * @dev Key: address of the user
+    * @dev Value: boolean indicating whether the address is whitelisted or not
+    */
     mapping(address => bool) whitelisted_address;
+
+    /// Address of the contract owner.
     address owner;
+    /// Duration of the whitelist period in minutes.
     uint256 whitelist_period;
+    /// Timestamp when the contract is deployed or the whitelist period starts.
     uint256 start_time;
+    /// Identifier for the ERC721 token. It represents the current token ID being minted.
     uint256 public tokenId;
+
 
     /**
     * @notice Whitelist period and owner is set
@@ -66,6 +78,7 @@ contract NftMinting is ERC721 {
       bool userIsWhitelisted = whitelisted_address[_whitelistedAddress];
       return userIsWhitelisted;
     }
+
 
     modifier onlyOwner() {
       require(msg.sender == owner, "Ownable: caller is not the owner");
